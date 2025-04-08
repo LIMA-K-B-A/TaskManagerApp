@@ -1,95 +1,50 @@
-# TaskUp - Gerenciador de Tarefas
+# Welcome to your Expo app 👋
 
-O TaskUp é um aplicativo móvel desenvolvido para ajudar você a gerenciar suas tarefas de forma eficiente e organizada. Com uma interface moderna e intuitiva, você pode criar, acompanhar e completar suas tarefas com facilidade.
+This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
-## Funcionalidades
+## Get started
 
-- 🔐 Autenticação de usuários
-- 📝 Criação de tarefas com título e descrição
-- ⏰ Definição de tempo limite para cada tarefa
-- 📸 Upload de imagens para as tarefas
-- ✅ Marcação de tarefas como concluídas
-- 📊 Contagem de tarefas ativas e concluídas
-- ⏱️ Timer para acompanhamento do tempo
-- 🎨 Interface moderna e responsiva
+1. Install dependencies
 
-## Tecnologias Utilizadas
+   ```bash
+   npm install
+   ```
 
-- [React Native](https://reactnative.dev/) - Framework para desenvolvimento mobile
-- [Expo](https://expo.dev/) - Plataforma de desenvolvimento
-- [Firebase](https://firebase.google.com/) - Backend e autenticação
-  - Firebase Authentication
-  - Cloud Firestore
-  - Firebase Storage
-- [TypeScript](https://www.typescriptlang.org/) - Linguagem de programação
-- [Expo Router](https://docs.expo.dev/router/introduction/) - Navegação
-- [React Native Paper](https://callstack.github.io/react-native-paper/) - Componentes UI
-- [date-fns](https://date-fns.org/) - Manipulação de datas
+2. Start the app
 
-## Pré-requisitos
+   ```bash
+    npx expo start
+   ```
 
-- Node.js 16 ou superior
-- npm ou yarn
-- Expo CLI
-- Conta no Firebase
+In the output, you'll find options to open the app in a
 
-## Instalação
+- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
+- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
+- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
+- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
 
-1. Clone o repositório:
+You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+
+## Get a fresh project
+
+When you're ready, run:
+
 ```bash
-git clone https://github.com/seu-usuario/taskup.git
-cd taskup
+npm run reset-project
 ```
 
-2. Instale as dependências:
-```bash
-npm install
-# ou
-yarn install
-```
+This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
 
-3. Configure o Firebase:
-   - Crie um projeto no Firebase Console
-   - Ative Authentication, Firestore e Storage
-   - Copie as credenciais do seu projeto
-   - Substitua as credenciais no arquivo `app/config/firebase.ts`
+## Learn more
 
-4. Inicie o projeto:
-```bash
-npx expo start
-```
+To learn more about developing your project with Expo, look at the following resources:
 
-5. Execute no seu dispositivo:
-   - Instale o app Expo Go no seu celular
-   - Escaneie o QR Code que aparece no terminal
-   - Ou use um emulador Android/iOS
+- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
+- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
 
-## Estrutura do Projeto
+## Join the community
 
-```
-app/
-├── (auth)/           # Telas de autenticação
-├── (tabs)/           # Telas principais
-├── components/       # Componentes reutilizáveis
-├── config/          # Configurações
-├── services/        # Serviços
-└── types/           # Tipos TypeScript
-```
+Join our community of developers creating universal apps.
 
-## Contribuição
-
-1. Faça um Fork do projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
-
-## Licença
-
-Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
-
-## Contato
-
-Seu Nome - [@seu_twitter](https://twitter.com/seu_twitter) - email@exemplo.com
-
-Link do Projeto: [https://github.com/seu-usuario/taskup](https://github.com/seu-usuario/taskup)
+- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
+- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.

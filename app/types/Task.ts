@@ -4,13 +4,12 @@ export interface Task {
   id: string;
   title: string;
   imageUrl?: string;
-  startDate: Date;
-  endDate?: Date;
+  startDate: Timestamp;
+  endDate: Timestamp;
   isCompleted: boolean;
   timeSpent?: number; // em segundos
-  createdAt: Date;
-  updatedAt: Date;
-  userId: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }
 
 export default Task; 

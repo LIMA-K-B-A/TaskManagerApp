@@ -4,10 +4,9 @@ import * as ImagePicker from 'expo-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import { Task } from '../types/Task';
-import taskService from '../services/taskService';
 
 interface NewTaskFormProps {
-  onSubmit: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'userId'>) => void;
+  onSubmit: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => void;
   onCancel: () => void;
 }
 
@@ -17,7 +16,6 @@ const NewTaskForm: React.FC<NewTaskFormProps> = ({ onSubmit, onCancel }) => {
   const [timeLimit, setTimeLimit] = useState(30); // Tempo limite em minutos
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [loading, setLoading] = useState(false);
 
   const pickImage = async () => {
     try {
@@ -36,39 +34,26 @@ const NewTaskForm: React.FC<NewTaskFormProps> = ({ onSubmit, onCancel }) => {
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!title.trim()) {
       return;
     }
 
-    try {
-      setLoading(true);
-      let imageUrl = null;
+    const endDate = new Date(startDate);
+    endDate.setMinutes(endDate.getMinutes() + timeLimit);
 
-      if (imageUri) {
-        imageUrl = await taskService.uploadImage(imageUri);
-      }
+    onSubmit({
+      title: title.trim(),
+      startDate,
+      endDate,
+      imageUrl: imageUri,
+      isCompleted: false,
+    });
 
-      const endDate = new Date(startDate);
-      endDate.setMinutes(endDate.getMinutes() + timeLimit);
-
-      await onSubmit({
-        title: title.trim(),
-        startDate,
-        endDate,
-        imageUrl,
-        isCompleted: false,
-      });
-
-      setTitle('');
-      setStartDate(new Date());
-      setTimeLimit(30);
-      setImageUri(null);
-    } catch (error) {
-      console.error('Erro ao criar tarefa:', error);
-    } finally {
-      setLoading(false);
-    }
+    setTitle('');
+    setStartDate(new Date());
+    setTimeLimit(30);
+    setImageUri(null);
   };
 
   return (

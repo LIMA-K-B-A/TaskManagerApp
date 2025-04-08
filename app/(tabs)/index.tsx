@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { auth } from '../config/firebase';
+import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { db } from '../config/firebase';
 import { Task } from '../types/Task';
 import NewTaskForm from '../components/NewTaskForm';
 import Modal from '../components/Modal';
-import { router } from 'expo-router';
-import taskService from '../services/taskService';
 
 export default function HomeScreen() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -14,42 +13,6 @@ export default function HomeScreen() {
   const [activeTasks, setActiveTasks] = useState(0);
   const [completedTasks, setCompletedTasks] = useState(0);
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      if (!user) {
-        router.replace('/login');
-        return;
-      }
-
-      setLoading(true);
-      setError(null);
-
-      try {
-        const unsubscribeTasks = taskService.subscribeToTasks((tasksData) => {
-          console.log('Recebidas tarefas:', tasksData);
-          setTasks(tasksData);
-          setActiveTasks(tasksData.filter(task => !task.isCompleted).length);
-          setCompletedTasks(tasksData.filter(task => task.isCompleted).length);
-          setLoading(false);
-          setError(null);
-        });
-
-        return () => {
-          unsubscribeTasks();
-          setLoading(false);
-        };
-      } catch (error) {
-        console.error('Erro ao configurar observador:', error);
-        setError('Erro ao carregar tarefas. Tente novamente.');
-        setLoading(false);
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -60,15 +23,32 @@ export default function HomeScreen() {
     return () => clearInterval(timer);
   }, [tasks]);
 
+  useEffect(() => {
+    const q = query(collection(db, 'tasks'), orderBy('createdAt', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const tasksData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Task[];
+      setTasks(tasksData);
+      setActiveTasks(tasksData.filter(task => !task.isCompleted).length);
+      setCompletedTasks(tasksData.filter(task => task.isCompleted).length);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   const checkTaskTimeouts = async () => {
     const now = new Date();
     for (const task of tasks) {
       if (!task.isCompleted && task.endDate) {
-        const endDate = task.endDate;
+        const endDate = task.endDate.toDate();
         if (now >= endDate) {
           try {
-            await taskService.updateTask(task.id, {
+            const taskRef = doc(db, 'tasks', task.id);
+            await updateDoc(taskRef, {
               isCompleted: true,
+              updatedAt: new Date(),
             });
           } catch (error) {
             console.error('Erro ao atualizar tarefa:', error);
@@ -78,46 +58,36 @@ export default function HomeScreen() {
     }
   };
 
-  const handleAddTask = async (taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'userId'>) => {
+  const handleAddTask = async (taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
-      setError(null);
-      await taskService.addTask(taskData);
+      await addDoc(collection(db, 'tasks'), {
+        ...taskData,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
       setIsModalVisible(false);
     } catch (error) {
       console.error('Erro ao adicionar tarefa:', error);
-      setError('Erro ao adicionar tarefa. Tente novamente.');
     }
   };
 
   const handleToggleTask = async (task: Task) => {
     try {
-      setError(null);
-      await taskService.updateTask(task.id, {
+      const taskRef = doc(db, 'tasks', task.id);
+      await updateDoc(taskRef, {
         isCompleted: !task.isCompleted,
+        updatedAt: new Date(),
       });
     } catch (error) {
       console.error('Erro ao atualizar tarefa:', error);
-      setError('Erro ao atualizar tarefa. Tente novamente.');
     }
   };
 
   const handleDeleteTask = async (taskId: string) => {
     try {
-      setError(null);
-      await taskService.deleteTask(taskId);
+      await deleteDoc(doc(db, 'tasks', taskId));
     } catch (error) {
       console.error('Erro ao deletar tarefa:', error);
-      setError('Erro ao deletar tarefa. Tente novamente.');
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await auth.signOut();
-      router.replace('/login');
-    } catch (error) {
-      console.error('Erro ao fazer logout:', error);
-      setError('Erro ao fazer logout. Tente novamente.');
     }
   };
 
@@ -132,7 +102,7 @@ export default function HomeScreen() {
   const getRemainingTime = (task: Task) => {
     if (!task.endDate) return null;
     const now = new Date();
-    const endDate = task.endDate;
+    const endDate = task.endDate.toDate();
     const diff = endDate.getTime() - now.getTime();
     
     if (diff <= 0) return 'Tempo esgotado!';
@@ -155,7 +125,7 @@ export default function HomeScreen() {
                 {task.title}
               </Text>
               <Text style={styles.taskDate}>
-                Data de início: {task.startDate.toLocaleDateString()}
+                Data de início: {task.startDate.toDate().toLocaleDateString()}
               </Text>
             </View>
           </View>
@@ -195,12 +165,7 @@ export default function HomeScreen() {
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <Text style={styles.appName}>TaskUp</Text>
-          <View style={styles.headerActions}>
-            <Text style={styles.currentTime}>{formatTime(currentTime)}</Text>
-            <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-              <Ionicons name="log-out-outline" size={24} color="#fff" />
-            </TouchableOpacity>
-          </View>
+          <Text style={styles.currentTime}>{formatTime(currentTime)}</Text>
         </View>
         <View style={styles.headerBottom}>
           <Text style={styles.headerTitle}>Minhas Tarefas</Text>
@@ -217,32 +182,12 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      {error && (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
-      )}
-
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
-          <Text style={styles.loadingText}>Carregando tarefas...</Text>
-        </View>
-      ) : tasks.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Ionicons name="list-outline" size={48} color="#666" />
-          <Text style={styles.emptyText}>Nenhuma tarefa encontrada</Text>
-          <Text style={styles.emptySubtext}>Clique no botão + para adicionar uma nova tarefa</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={tasks}
-          renderItem={renderTask}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContainer}
-        />
-      )}
-
+      <FlatList
+        data={tasks}
+        renderItem={renderTask}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContainer}
+      />
       <TouchableOpacity
         style={styles.addButton}
         onPress={() => setIsModalVisible(true)}
@@ -320,46 +265,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     marginLeft: 8,
-  },
-  errorContainer: {
-    backgroundColor: '#ffebee',
-    padding: 12,
-    marginHorizontal: 16,
-    marginTop: 16,
-    borderRadius: 8,
-  },
-  errorText: {
-    color: '#d32f2f',
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#666',
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 32,
-  },
-  emptyText: {
-    fontSize: 18,
-    color: '#666',
-    marginTop: 16,
-    textAlign: 'center',
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: '#999',
-    marginTop: 8,
-    textAlign: 'center',
   },
   listContainer: {
     padding: 16,
@@ -459,13 +364,5 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
-  logoutButton: {
-    padding: 8,
   },
 });

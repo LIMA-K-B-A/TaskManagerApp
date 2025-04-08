@@ -1,19 +1,40 @@
 import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
+import { useRouter, useSegments } from 'expo-router';
+import { auth } from './config/firebase';
 
 export default function RootLayout() {
+  const segments = useSegments();
+  const router = useRouter();
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      const inAuthGroup = segments[0] === '(auth)';
+
+      if (!user && !inAuthGroup) {
+        router.replace('/login');
+      } else if (user && inAuthGroup) {
+        router.replace('/(tabs)');
+      }
+    });
+
+    return () => unsubscribe();
+  }, [segments]);
+
   return (
-    <>
-      <StatusBar style="light" />
-      <Stack>
-        <Stack.Screen 
-          name="(tabs)" 
-          options={{ 
-            headerShown: false,
-            title: 'TaskManager'
-          }} 
-        />
-      </Stack>
-    </>
+    <Stack>
+      <Stack.Screen
+        name="(auth)"
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="(tabs)"
+        options={{
+          headerShown: false,
+        }}
+      />
+    </Stack>
   );
 }
